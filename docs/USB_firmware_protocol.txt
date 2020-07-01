@@ -1,0 +1,99 @@
+// ********************************************************************************
+// EZUSB Vendor Command - Modified by Michal
+
+// This is the "heart" of communication with PC software
+// Using the "UsbFunctions.dll" 
+// VendorIORequest
+//   (short bMyReq,long wMyVal,long wMyIndx,short iMyDir,short MyLen,char* MyBuf)
+
+// ********************************************************************************
+
+      // **********************************************************************
+      // EZUSB SPI interface
+      // **********************************************************************
+
+      // bMyReq  .. VR_SPI .. 0xDA
+
+      // wMyVal .. low byte is passed to the SPI when reading
+         // This is meant as value for ICV parts "communication register"
+         // It allows using only one USB transaction when reading
+         // a register "addressed" by the "communication register"
+
+      // wMyIndx .. 16 bit value is passed as a "timeout"
+         // This is meant for waiting for ICV parts "/RDY" signal
+         // The SPI operation waits for "/RDY" high to low transition 
+         // max timeout = 65535 ~ wait for 5.4 seconds 
+         // min timeout = 0 ~ don't wait at all, ignore "/RDY"
+         // Implemented as a simple loop in WaitForRdy
+
+      // iMyDir = 0 .. PC -> EZUSB
+      // iMyDir = 1 .. EZUSB -> PC
+      // MyLen   .. Number of bytes to send / receive, max 64
+      // MyBuf   .. Buffer, array of bytes
+
+      // **********************************************************************
+
+      // **********************************************************************
+      // EZ_USB I/O ports
+      // **********************************************************************
+
+      // Read/write the EZ USB I/O ports configuration
+
+      // bMyReq  .. VR_IO .. 0xDB
+      // wMyVal  .. not used
+      // wMyIndx .. not used
+      // iMyDir = 0 .. PC -> EZUSB
+      // iMyDir = 1 .. EZUSB -> PC
+      // MyLen   .. Number of bytes to send / receive, should be 1..6
+      // MyBuf   .. Buffer, array of bytes
+
+      // The values in buffer represent bytes in following order:
+      // 0 .. port A value
+      // 1 .. port A direction
+      // 2 .. port B value
+      // 3 .. port B direction
+      // 4 .. port D value
+      // 5 .. port D direction
+      // The I/O port direction is per bit, 0=input, 1=output
+      // It is possible to use only part of configuration,
+      // For example only read or write the port A value
+
+      // **********************************************************************
+
+      // **********************************************************************
+      // EZUSB I2C interface
+      // **********************************************************************
+             
+      // Functional, but locks when I2C Bus Error
+      // I.e., locks when the EZUSB cannot control the I2C bus as a master
+
+      // When NAK, the I2C bus is released and my error counter is incremented
+
+      // bMyReq  .. VR_I2C0 .. 0xDC .. Simple I2C, without pointer
+      //         .. VR_I2C1 .. 0xDD .. Extended I2C, 8-bit pointer
+      //         .. VR_I2C2 .. 0xDE .. Extended I2C,16-bit pointer
+      // wMyVal  .. I2C Device (Slave) Address in low byte
+      // wMyIndx .. I2C Pointer (Register Address)
+      // iMyDir = 0 .. PC -> EZUSB
+      // iMyDir = 1 .. EZUSB -> PC
+      // MyLen   .. Number of bytes to send / receive, max 64
+      // MyBuf   .. Buffer, array of bytes
+
+      // **********************************************************************
+
+      // **********************************************************************
+      // Error counter
+      // **********************************************************************
+
+      // I have implemented this counter to make software more robust
+      // The error counter is incremented with any I2C communication error
+      // The error counter is cleared when read via USB
+
+      // bMyReq  .. VR_Err  .. 0xDF .. Read error counter
+      // wMyVal  .. not used
+      // wMyIndx .. not used
+      // iMyDir = 1 .. EZUSB -> PC
+      // MyLen  = 1 .. Number of bytes to receive
+      // MyBuf(0)   .. Error counter value - # of errors 
+
+      // **********************************************************************

@@ -1,0 +1,1 @@
+SUBSYSTEM=="usb", ACTION=="add", ATTR{idVendor}=="0456", ATTR{idProduct}=="b481", RUN+="/bin/sh -c '/sbin/fxload -l -m 0666 -t fx2 -I /lib/firmware/Icv_usb.hex -D $tempnode && /usr/bin/logger AD7746EB firmware loaded.'"
