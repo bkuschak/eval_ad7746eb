@@ -30,13 +30,23 @@ for Windows. Grab this firmware file and copy it to ./firmware/Icv_usb.hex:
         make
         sudo make install
 
-4) Plug the board into USB. Run the example control program. 
+## Usage
 
-        ./eval_ad7746eb
+Plug the board into USB and run the example program:
 
-    or log data to a file:
+```
+$ ./eval_ad7746eb
+time: 1593624499.785889  capacitance_raw: 80f720  capacitance_pF: 0.061781  temp_raw: 8434629  temp_C: 22.471
+time: 1593624499.956193  capacitance_raw: 80f697  capacitance_pF: 0.061647  temp_raw: 8434684  temp_C: 22.498
+time: 1593624500.181381  capacitance_raw: 80f6b2  capacitance_pF: 0.061674  temp_raw: 8434666  temp_C: 22.489
+time: 1593624500.417508  capacitance_raw: 80f6f0  capacitance_pF: 0.061734  temp_raw: 8434689  temp_C: 22.500
+time: 1593624500.643616  capacitance_raw: 80f693  capacitance_pF: 0.061644  temp_raw: 8434671  temp_C: 22.492
+```
 
-        ./eval_ad7746eb > data.log 2>/dev/null
+or log data to a file:
+```
+./eval_ad7746eb > data.log 2>/dev/null
+```
 
 You can modify the config_ad7746() and config_board() functions as needed for 
 your application.
