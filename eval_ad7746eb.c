@@ -332,8 +332,8 @@ static int config_ad7746()
 	// VT setup. Internal sensor, internal ref, VTCHOP, enabled.
 	write_reg(AD7746_SLAVE_ADDR, AD7746_REG_VT_SETUP, 0x81);
 	
-	// Cap setup. CIN2, Differential mode, no CAPCHOP, enabled.
-	write_reg(AD7746_SLAVE_ADDR, AD7746_REG_CAP_SETUP, 0xE0);
+	// Cap setup. CIN1, Differential mode, no CAPCHOP, enabled.
+	write_reg(AD7746_SLAVE_ADDR, AD7746_REG_CAP_SETUP, 0xA0);
 
 	// Configuration. Lowest rate, continuous mode.
 	write_reg(AD7746_SLAVE_ADDR, AD7746_REG_CONFIG, 0xF9);
