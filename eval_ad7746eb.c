@@ -18,6 +18,8 @@
 #include <unistd.h>
 #include "libusb.h"
 
+#define ENABLE_TEMPERATURE	// Enabling temp reduces the output data rate.
+
 #define EVAL_AD7746EB_VID 	0x0456
 #define EVAL_AD7746EB_PID 	0xB481
 
@@ -208,7 +210,8 @@ static int wait_for_ready(int timeout_msec)
 			return -1;
 		}
 
-		if((status & 0xF) == 0) 
+		// Wait for all enabled channels to be ready.
+		if((status & 0x4) == 0) 
 			return 0;
 
 		if(status & 0x8) 
@@ -243,10 +246,46 @@ static float raw_to_temperature(int raw)
 // temp may be NULL to skip reading it.
 static int get_data(int* cap, int* temp, int timeout_msec) 
 {
+	if(!cap && !temp)
+		return 0;	// Nothing to do
+
 	int ret;
 	if((ret = wait_for_ready(timeout_msec)) != 0)
 		return ret;
 
+	// Read all the data in one chunk. Either cap, temp, or both.
+	uint8_t data[6];
+	uint8_t addr;
+	int len;
+	if(cap && temp) {
+		addr = AD7746_REG_CAP_DATA_H;
+		len = 6;
+	}
+	else if(cap && !temp) {
+		addr = AD7746_REG_CAP_DATA_H;
+		len = 3;
+	}
+	else {
+		addr = AD7746_REG_VT_DATA_H;
+		len = 3;
+	}
+
+	if(read_regs(AD7746_SLAVE_ADDR, addr, data, len) < 0) {
+		fprintf(stderr, "Failed to read data registers!\n");
+		return -1;
+	}
+	if(cap) {
+		*cap = data[0];  *cap <<= 8;
+		*cap |= data[1];  *cap <<= 8;
+		*cap |= data[2]; 
+	}
+	if(temp) {
+		*temp = data[len-3];  *temp <<= 8;
+		*temp |= data[len-2];  *temp <<= 8;
+		*temp |= data[len-1];  
+	}
+
+#if 0
 	uint8_t data[3];
 	if(cap) {
 		if(read_regs(AD7746_SLAVE_ADDR, AD7746_REG_CAP_DATA_H, data, 
@@ -268,6 +307,7 @@ static int get_data(int* cap, int* temp, int timeout_msec)
 		*temp |= data[1];  *temp <<= 8;
 		*temp |= data[2];  
 	}
+#endif
 	return 0;
 }
 
@@ -318,6 +358,11 @@ static int config_board()
 // *** CHANGE THIS AS NEEDED FOR YOUR APPLICATION ***
 static int config_ad7746()
 {
+	// Note: If both capacitance and temperature channels are enabled, the 
+	// device alternates between them. Overall ODR is reduced as a result.
+	// In the case of cap ODR = 9.1Hz and temp ODR = 8.2 Hz the resulting 
+	// ODR = 4.313 Hz.
+
 	// Reset 
 	write_reg(AD7746_SLAVE_ADDR, AD7746_REG_RESET, 0);
 	usleep(500);
@@ -329,9 +374,10 @@ static int config_ad7746()
 	write_reg(AD7746_SLAVE_ADDR, AD7746_REG_CAPDAC_A, 0x49 | 0x80);
 	write_reg(AD7746_SLAVE_ADDR, AD7746_REG_CAPDAC_B, 0x49 | 0x80);
 
+#ifdef ENABLE_TEMPERATURE
 	// VT setup. Internal sensor, internal ref, VTCHOP, enabled.
 	write_reg(AD7746_SLAVE_ADDR, AD7746_REG_VT_SETUP, 0x81);
-	
+#endif
 	// Cap setup. CIN1, Differential mode, no CAPCHOP, enabled.
 	write_reg(AD7746_SLAVE_ADDR, AD7746_REG_CAP_SETUP, 0xA0);
 
@@ -370,15 +416,21 @@ int main(int argc, char **argv)
 
 	while(1) {
 
-		int cap, temp;
+		int cap, temp = 0;
+#ifdef ENABLE_TEMPERATURE
 		if(get_data(&cap, &temp, 300) < 0) {
+#else
+		if(get_data(&cap, NULL, 300) < 0) {
+#endif
 			fprintf(stderr, "Failed to get data!\n");
 			return -1;
 		}
 
-		float capf, tempf;
+		float capf, tempf = 0;
 		capf = raw_to_capacitance(cap);
+#ifdef ENABLE_TEMPERATURE
 		tempf = raw_to_temperature(temp);
+#endif
 
 		double t;
 		struct timeval now;
