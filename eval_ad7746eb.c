@@ -285,29 +285,6 @@ static int get_data(int* cap, int* temp, int timeout_msec)
 		*temp |= data[len-1];  
 	}
 
-#if 0
-	uint8_t data[3];
-	if(cap) {
-		if(read_regs(AD7746_SLAVE_ADDR, AD7746_REG_CAP_DATA_H, data, 
-			sizeof(data)) < 0) {
-			fprintf(stderr, "Failed to read capacitance!\n");
-			return -1;
-		}
-		*cap = data[0];  *cap <<= 8;
-		*cap |= data[1];  *cap <<= 8;
-		*cap |= data[2]; 
-	}
-	if(temp) {
-		if(read_regs(AD7746_SLAVE_ADDR, AD7746_REG_VT_DATA_H, data, 
-			sizeof(data)) < 0) {
-			fprintf(stderr, "Failed to read temperature!\n");
-			return -1;
-		}
-		*temp = data[0];  *temp <<= 8;
-		*temp |= data[1];  *temp <<= 8;
-		*temp |= data[2];  
-	}
-#endif
 	return 0;
 }
 
