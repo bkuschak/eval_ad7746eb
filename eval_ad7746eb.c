@@ -230,7 +230,7 @@ static int wait_for_ready(int timeout_msec)
 
 static float raw_to_capacitance(int raw)
 {
-	float scale = 8.192e-12 / (1<<23);
+	float scale = 8.192e-12 / (1<<24);
 	return scale * (raw - 0x800000); 	// offset binary
 }
 
