@@ -18,7 +18,7 @@
 #include <unistd.h>
 #include "libusb.h"
 
-#define ENABLE_TEMPERATURE	// Enabling temp reduces the output data rate.
+#undef ENABLE_TEMPERATURE	// Enabling temp reduces the output data rate.
 
 #define EVAL_AD7746EB_VID 	0x0456
 #define EVAL_AD7746EB_PID 	0xB481
@@ -227,7 +227,8 @@ static int wait_for_ready(int timeout_msec)
 		
 		// Delay instead of constantly spinning, to reduce CPU load.
 		// FIXME - make delay adjustable, depending on sample rate.
-		usleep(10*1000);
+		//usleep(10*1000);
+		usleep(5*1000);
 	}
 }
 
@@ -358,8 +359,11 @@ static int config_ad7746()
 	// Cap setup. CIN1, Differential mode, no CAPCHOP, enabled.
 	write_reg(AD7746_SLAVE_ADDR, AD7746_REG_CAP_SETUP, 0xA0);
 
-	// Configuration. Lowest rate, continuous mode.
-	write_reg(AD7746_SLAVE_ADDR, AD7746_REG_CONFIG, 0xF9);
+	// Configuration. continuous mode.
+	//write_reg(AD7746_SLAVE_ADDR, AD7746_REG_CONFIG, 0x01);	// 90.9Hz
+	write_reg(AD7746_SLAVE_ADDR, AD7746_REG_CONFIG, (2<<3) | 0x01);	// 50 Hz
+	//write_reg(AD7746_SLAVE_ADDR, AD7746_REG_CONFIG, (4<<3) | 0x01);	// 16.1 Hz
+	//write_reg(AD7746_SLAVE_ADDR, AD7746_REG_CONFIG, 0xF9);	// 9.1Hz
 
 	// Wait long enough for first sample.
 	usleep(300 * 1000);
@@ -413,9 +417,14 @@ int main(int argc, char **argv)
 		struct timeval now;
 		gettimeofday(&now, NULL);
 		t = now.tv_sec + now.tv_usec / 1e6;
+#if 0
 		fprintf(stdout, "time: %f  capacitance_raw: %06x  capacitance_pF: %.6f  "
 				"temp_raw: %d  temp_C: %.3f\n", 
 				t, cap, capf*1e12, temp, tempf);
+#else
+		// time, cap (pF)
+		fprintf(stdout, "%f %.9f\n", t, capf*1e12);
+#endif
 	}
 	return 0;
 }
